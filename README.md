@@ -1,18 +1,16 @@
 # Statamic Akismet
 
-> Statamic Akismet is a Statamic addon that does something pretty neat.
+> Akismet spam detection for Statamic forms.
 
-## Features
+## How it Works
 
-This addon does:
-
-- This
-- And this
-- And even this
+- Visitor submits form on front-end
+- Addon catches it and sends the data to Akismet
+- Akismet responds whether the submission is spam or not
+- Any submission detected as NOT spam is processed normally (saved, email notification sent if set up, etc.)
+- Any submission detected as spam is instead saved in Storage and can be viewed in the CP
 
 ## How to Install
-
-You can search for this addon in the `Tools > Addons` section of the Statamic control panel and click **install**, or run the following command from your project root:
 
 ``` bash
 composer require schwartzmj/statamic-akismet
@@ -20,4 +18,4 @@ composer require schwartzmj/statamic-akismet
 
 ## How to Use
 
-Here's where you can explain how to use this wonderful addon.
+Enter your Akismet API key in the published config under `config/statamic/akismet.php`

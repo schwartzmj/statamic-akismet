@@ -1,6 +1,6 @@
 {
     "name": "schwartzmj/statamic-akismet",
-    "version": "0.0.1",
+    "license": "proprietary",
     "description": "Form antispam for Statamic.",
     "require": {
         "php": ">=8.0",

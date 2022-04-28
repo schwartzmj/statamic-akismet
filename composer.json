@@ -1,0 +1,24 @@
+{
+    "name": "schwartzmj/statamic-akismet",
+    "description": "Form antispam for Statamic.",
+    "require": {
+        "php": ">=8.0",
+        "statamic/cms": "3.3.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Schwartzmj\\StatamicAkismet\\": "src"
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Statamic Akismet",
+            "description": "Form antispam for Statamic."
+        },
+        "laravel": {
+            "providers": [
+                "Schwartzmj\\StatamicAkismet\\ServiceProvider"
+            ]
+        }
+    }
+}

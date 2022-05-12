@@ -18,7 +18,7 @@ composer require schwartzmj/statamic-akismet
 
 ## How to Use
 
-Enter your Akismet API key in the published config under `config/statamic/akismet.php`
+Create a new .env variable called `AKISMET_API_KEY` and enter your Akismet API key.
 
 ## Future features / WIP
 - Enter API key from front-end

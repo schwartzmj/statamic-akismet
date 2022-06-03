@@ -20,7 +20,7 @@
                 <p>Form : {{ \Illuminate\Support\Str::title($s['formHandle']) }}</p>
                 <details>
                     <summary class="cursor-pointer">[{{ $idx }}] Data ></summary>
-                    <pre>@foreach($s['data'] as $key => $val){{$key}}: {{$val}}<br/>@endforeach</pre>
+                    <pre>@json($s['data'], JSON_PRETTY_PRINT)</pre>
                 </details>
             </li>
         @endforeach

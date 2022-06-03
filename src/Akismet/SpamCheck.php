@@ -2,15 +2,18 @@
 
 namespace Schwartzmj\StatamicAkismet\Akismet;
 
+use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Statamic\Contracts\Forms\Submission;
 use Statamic\Facades\File;
 
 class SpamCheck {
 
-    private array $spamCheckData;
+    private Collection $spamCheckData;
     private bool $isSpam;
     private string $akismet_api_key;
 
@@ -19,29 +22,90 @@ class SpamCheck {
         private string $type = 'contact-form',
     )
     {
-        $this->spamCheckData = [
+        $this->addRequestDataToSubmission();
+
+        $this->spamCheckData = collect([
             'blog' => config('app.url') ?: 'https://www.wemaketechsimple.com',
             'user_ip' => $submission->get('_user_ip'),
             'user_agent' => $submission->get('_user_agent'),
             'referrer' => $submission->get('_referrer'),
             'comment_type' => $this->type,
-            'comment_author' => $submission->get($this->getNameField(), config('app.name') . ' User'), // need to get this from the form. what if form has first & last? we need to probably define it somewhere
-            'comment_author_email' => $submission->get('email'), // also must be a field in the form
-            'comment_content' => $submission->get('message'), // also must be a field in the form
-        ];
+            'comment_author' => $this->getSubmissionValueByFieldSearch('name'),
+            'comment_author_email' => $this->getSubmissionValueByFieldSearch('email'),
+            'comment_content' => $this->getSubmissionValueByFieldSearch(['message', 'body', 'content']),
+        ])
+            ->filter();
+        $hasRequiredFields = $this->validateRequiredFields();
+        if (!$hasRequiredFields) {
+            throw new Exception('Missing required fields for Akismet check.');
+        }
         $this->akismet_api_key = config('statamic.akismet.api_key');
-        // validate that spamCheckData has all the required fields ?
+
+        if (!$this->akismet_api_key) {
+            throw new Exception('Missing Akismet API key.');
+        }
     }
 
-    private function getNameField()
-    {
-        $potentialNameFields = collect(['name', 'first_name', 'full_name']);
-
-        return $potentialNameFields->map(function ($field) {
-            return $this->submission->has($field) ? $field : null;
+    public function validateRequiredFields(): bool {
+        // Akismet required fields are "blog" and "user_ip"
+        // We also want to always include 'comment_type' and 'comment_content'
+        $requiredKeys = ['blog','user_ip','comment_type','comment_content'];
+        $providedRequiredKeys = $this->spamCheckData->filter(function($value, $key) use ($requiredKeys) {
+            $requiredKey = Str::is($requiredKeys, $key);
+            if ($requiredKey && $value) {
+                return true;
+            }
+            return false;
         })
-            ->filter()
-            ->first();
+            ->keys()
+            ->toArray();
+        $diff = array_diff($requiredKeys, $providedRequiredKeys);
+
+        return count($diff) === 0;
+    }
+
+    private function addRequestDataToSubmission(): void
+    {
+        $this->submission->set('_user_ip', request()->ip());
+        $this->submission->set('_user_agent', request()->userAgent());
+        $this->submission->set('_referrer', request()->headers->get('referer'));
+    }
+
+    // Checks if the submission has a form field that matches or is similar to the given field name
+    // Then returns the field name that exists, or null if no field matches
+    // TODO: these getField methods should just become some helper class that can be used in multiple components of statamic / addons
+    public function getField(string|array $fieldName): string|null {
+        if (is_array($fieldName)) {
+            return $this->getFieldByArray($fieldName);
+        }
+        $submission = collect($this->submission);
+        if ($submission->has($fieldName)) {
+            return $fieldName;
+        }
+        return $submission->keys()->first(function($key) use ($fieldName) {
+            return Str::contains($key, $fieldName);
+         });
+    }
+
+    public function getFieldByArray(array $fieldNames): string|null {
+        $submission = collect($this->submission);
+
+        $firstMatchedFieldName = collect($fieldNames)->first(function($fieldName) use ($submission) {
+            if ($submission->has($fieldName)) {
+                return true;
+            }
+            return $submission->keys()->first(function($key) use ($fieldName) {
+                return Str::contains($key, $fieldName);
+             });
+        });
+        if (is_string($firstMatchedFieldName)) {
+            return $this->getField($firstMatchedFieldName);
+        }
+        return null;
+    }
+
+    public function getSubmissionValueByFieldSearch(string|array $fieldName): string|null {
+        return $this->submission->get($this->getField($fieldName));
     }
 
     public function checkIfSpam(): bool {
@@ -69,9 +133,11 @@ class SpamCheck {
         $this->submission->set('_akismet_spam', true);
 
         $path = '/_spam/'.$this->submission->form->handle().'/'.$this->submission->id().'.yaml';
+
+        $submissionData = $this->submission->data()->all();
         Storage::put(
             $path,
-            \Statamic\Facades\YAML::dump($this->submission->data()->all())
+            \Statamic\Facades\YAML::dump($submissionData)
         );
     }
 
@@ -99,5 +165,9 @@ class SpamCheck {
     public function isSpam(): bool
     {
         return $this->isSpam;
+    }
+
+    public function spamCheckData(): Collection {
+        return $this->spamCheckData;
     }
 }

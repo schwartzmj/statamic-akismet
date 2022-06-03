@@ -30,6 +30,20 @@ class ServiceProvider extends AddonServiceProvider
     {
         $this->bootAddonConfig()
             ->bootAddonNav();
+
+        $this->checkApiKeySet();
+    }
+
+    protected function checkApiKeySet(): bool
+    {
+        $akismet_api_key = config('statamic.akismet.api_key');
+
+        if (!$akismet_api_key) {
+            \Statamic\Facades\CP\Toast::error('Akismet api key not set (error may take some time to go away once fixed).')
+                ->duration(50000);
+            return false;
+        }
+        return true;
     }
 
     protected function bootAddonConfig(): self
@@ -47,6 +61,9 @@ class ServiceProvider extends AddonServiceProvider
 
         NavFacade::extend(function (StatamicNav $nav) {
             $nav->content('Spam')
+                ->icon('<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>')
                 ->section('Form Spam')
                 ->route('spam.index');
         });

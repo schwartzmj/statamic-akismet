@@ -66,6 +66,7 @@ class SpamCheck {
 
     private function addRequestDataToSubmission(): void
     {
+        $this->submission->set('_timestamp', now()->timestamp);
         $this->submission->set('_user_ip', request()->ip());
         $this->submission->set('_user_agent', request()->userAgent());
         $this->submission->set('_referrer', request()->headers->get('referer'));

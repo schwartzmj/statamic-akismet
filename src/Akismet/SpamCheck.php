@@ -49,7 +49,7 @@ class SpamCheck {
     public function validateRequiredFields(): bool {
         // Akismet required fields are "blog" and "user_ip"
         // We also want to always include 'comment_type' and 'comment_content'
-        $requiredKeys = ['blog','user_ip','comment_type','comment_content'];
+        $requiredKeys = ['blog','user_ip'];
         $providedRequiredKeys = $this->spamCheckData->filter(function($value, $key) use ($requiredKeys) {
             $requiredKey = Str::is($requiredKeys, $key);
             if ($requiredKey && $value) {

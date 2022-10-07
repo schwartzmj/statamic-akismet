@@ -20,7 +20,13 @@
                 <p>Form : {{ \Illuminate\Support\Str::title($s['formHandle']) }}</p>
                 <details>
                     <summary class="cursor-pointer">[{{ $idx }}] Data ></summary>
-                    <pre>@json($s['data'], JSON_PRETTY_PRINT)</pre>
+{{--                    <pre>@json($s['data'], JSON_PRETTY_PRINT)</pre>--}}
+                    <pre>
+                        @php
+                            $jsonStringData = json_encode($s['data'], JSON_PRETTY_PRINT);
+                        @endphp
+                        {{ $jsonStringData }}
+                    </pre>
                 </details>
             </li>
         @endforeach
